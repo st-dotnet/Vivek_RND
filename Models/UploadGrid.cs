@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace WebForm.Models
+﻿namespace WebForm.Models
 {
-    public class User
+    public class UploadGrid
     {
         public int Id { get; set; }
         public string FirstName { get; set; }
@@ -15,10 +13,5 @@ namespace WebForm.Models
         public string ConfirmPassword { get; set; }
         public string Gender { get; set; }
         public string MaritalStatus { get; set; }
-
-        public static implicit operator User(List<User> v)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -1,12 +1,20 @@
-﻿@model IEnumerable<WebForm.Models.User>
+﻿
+ @model IEnumerable<WebForm.Models.User>
 
 @{
     ViewData["Title"] = "All Users";
+    var searchString = ViewData["SearchString"] as string;
 }
+
 <style>
     table {
         width: 100%;
         border-collapse: collapse;
+    }
+
+    a {
+        text-decoration: none;
+        color: black;
     }
 
     th, td {
@@ -23,7 +31,16 @@
         background-color: ghostwhite;
     }
 </style>
+
 <h1>All Users</h1>
+
+<form asp-action="GetUser" method="get">
+    <p>
+        Find by name: @Html.TextBox("searchString", searchString)
+        <input type="submit" value="Search" />
+    </p>
+</form>
+
 <table>
     <thead>
         <tr>
@@ -68,8 +85,20 @@
                 </td>
             </tr>
         }
-        <form asp-action="DownloadGrid" method="get">
-            <button type="submit" class="btn btn-danger">Download</button>
-        </form>
     </tbody>
 </table>
+
+<p>
+    <a asp-action="Add">Add User</a>
+</p>
+
+<form asp-action="DownloadGrid" method="get">
+    <button type="submit" class="btn btn-danger">Download</button>
+</form>
+
+<form asp-action="UploadGrid" method="post" enctype="multipart/form-data">
+    <div>
+        <input type="file" name="file" />
+        <button type="submit">Upload</button>
+    </div>
+</form>

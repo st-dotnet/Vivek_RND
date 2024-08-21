@@ -13,5 +13,6 @@ namespace WebForm.Data
         public DbSet<AddUsers> AddUsers { get; set; }
         public DbSet<UpdateUser> UpdateUser { get; set; }
         public DbSet<WebForm.Models.DeleteUser> DeleteUser { get; set; }
+        public DbSet<WebForm.Models.UploadGrid> UploadGrid { get; set; }
     }
 }

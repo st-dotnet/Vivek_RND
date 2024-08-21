@@ -1,0 +1,23 @@
+﻿@model IEnumerable<WebForm.Models.User>
+
+
+
+@{
+    ViewBag.Title = "Upload Grid";
+}
+<h2>UploadGrid</h2>
+ @using (Html.BeginForm("UploadGrid", "User", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    <div>
+        @Html.TextBox("file", "", new { type = "file" }) <br />
+        <input type="submit" disabled="true" value="Upload" />
+        <script>
+        document.querySelector("input[type=file]").onchange = ({
+            target: { value },
+        }) => {
+            document.querySelector("input[type=submit]").disabled = !value;
+        };
+    </script>
+        @ViewBag.Message
+    </div>
+} 

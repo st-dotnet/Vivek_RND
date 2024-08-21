@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
 using System.Data;
+using System.Linq;
 using System.Text.Json;
 using WebForm.Data;
 using WebForm.Models;
@@ -21,13 +25,25 @@ namespace WebForm.Controllers
         {
             this.dbContext = dbContext;
         }
-
         [HttpGet("user/get")]
-        public async Task<IActionResult> GetUser()
+        public async Task<IActionResult> GetUser(string searchString)
         {
-            var users = await dbContext.users.ToListAsync();
+            var rec = dbContext.users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                rec = rec.Where(s => s.FirstName.Contains(searchString));
+            }
+            var users = await rec.ToListAsync();
+            ViewData["SearchString"] = searchString;
             return View(users);
         }
+        //[HttpGet("user/get")]
+        //public async Task<IActionResult> GetUser()
+        //{
+        //    var users = await dbContext.users.ToListAsync();
+        //    return View(users);
+        //}
 
         [HttpPost("user/addUser")]
         public async Task<IActionResult> Add([FromForm] AddUsers addUsers)
@@ -144,22 +160,18 @@ namespace WebForm.Controllers
 
 
 
-
-
-
-
         [HttpGet("user")]
         public async Task<IActionResult> DownloadGrid()
         {
             var users = await dbContext.users.ToListAsync();
 
-           
+
             using (var package = new ExcelPackage())
             {
-              
+
                 var worksheet = package.Workbook.Worksheets.Add("Report");
 
-              
+
                 worksheet.Cells["A1"].Value = "Id";
                 worksheet.Cells["B1"].Value = "FirstName";
                 worksheet.Cells["C1"].Value = "LastName";
@@ -188,7 +200,8 @@ namespace WebForm.Controllers
                     worksheet.Cells[string.Format("K{0}", row)].Value = item.MaritalStatus;
                     row++;
                 }
-               
+
+
                 worksheet.Cells["A:K"].AutoFitColumns();
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
@@ -196,17 +209,55 @@ namespace WebForm.Controllers
                 return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "UsersReport.xlsx");
             }
         }
-      
+
+
+
+        [HttpPost]
+        [Route("user/UploadGrid")]
+        public async Task<IActionResult> UploadGrid([FromRoute] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+
+            var users = new List<User>();
+
+            using (var package = new ExcelPackage(file.OpenReadStream()))
+            {
+                var worksheet = package.Workbook.Worksheets[0];
+                var rowCount = worksheet.Dimension.Rows;
+
+                for (int row = 2; row <= rowCount; row++)
+                {
+                    var user = new User
+                    {
+                        Id = int.Parse(worksheet.Cells[row, 1].Text),
+                        FirstName = worksheet.Cells[row, 2].Text,
+                        LastName = worksheet.Cells[row, 3].Text,
+                        Age = worksheet.Cells[row, 4].Text,
+                        PhoneNumber = long.Parse(worksheet.Cells[row, 5].Text),
+                        AlternatePhoneNumber = long.Parse(worksheet.Cells[row, 6].Text),
+                        Email = worksheet.Cells[row, 7].Text,
+                        Password = worksheet.Cells[row, 8].Text,
+                        ConfirmPassword = worksheet.Cells[row, 9].Text,
+                        Gender = worksheet.Cells[row, 10].Text,
+                        MaritalStatus = worksheet.Cells[row, 11].Text
+                    };
+                    users.Add(user);
+                }
+            }
+            dbContext.users.Add(users);
+            await dbContext.SaveChangesAsync();
+            ViewBag.Message = "File Uploaded Successfully!!";
+
+            return RedirectToAction(nameof(GetUser));
+        }
+
+        [HttpGet("user/UploadGrid")]
+        public IActionResult UploadGrid()
+        {
+            return View();
+        }
     }
 }
-
-
-
-            
-
-
-
-      
-
-
- 
