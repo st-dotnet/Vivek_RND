@@ -32,12 +32,14 @@ namespace WebForm.Controllers
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                rec = rec.Where(s => s.FirstName.Contains(searchString));
+                rec = rec.Where(s => s.FirstName.Contains(searchString) || s.LastName.Contains(searchString) ||
+                s.Email.Contains(searchString) || s.Age.Contains(searchString));
             }
             var users = await rec.ToListAsync();
             ViewData["SearchString"] = searchString;
             return View(users);
         }
+
         //[HttpGet("user/get")]
         //public async Task<IActionResult> GetUser()
         //{
@@ -97,7 +99,6 @@ namespace WebForm.Controllers
                 Gender = existingUser.Gender,
                 MaritalStatus = existingUser.MaritalStatus
             };
-
             return View(model);
         }
 

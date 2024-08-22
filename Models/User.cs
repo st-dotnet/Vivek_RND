@@ -18,7 +18,7 @@ namespace WebForm.Models
 
         public static implicit operator User(List<User> v)
         {
-            throw new NotImplementedException();
+            return v.FirstOrDefault();
         }
     }
 }
