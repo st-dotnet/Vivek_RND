@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
 using System.Data;
+using System.Drawing.Printing;
 using System.Linq;
 using System.Text.Json;
 using WebForm.Data;
@@ -25,27 +26,188 @@ namespace WebForm.Controllers
         {
             this.dbContext = dbContext;
         }
+
         [HttpGet("user/get")]
-        public async Task<IActionResult> GetUser(string searchString)
+        public async Task<IActionResult> GetUser(string searchString, int pageNumber = 1, int pageSize = 5)
         {
-            var rec = dbContext.users.AsQueryable();
+
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+
+            var query = dbContext.users.AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                rec = rec.Where(s => s.FirstName.Contains(searchString) || s.LastName.Contains(searchString) ||
-                s.Email.Contains(searchString) || s.Age.Contains(searchString));
+                query = query.Where(s => s.FirstName.Contains(searchString) ||
+                                         s.LastName.Contains(searchString) ||
+                                         s.Email.Contains(searchString) ||
+                                         s.Age.Contains(searchString)
+                                         );
+
             }
-            var users = await rec.ToListAsync();
+
+            var totalCount = await query.CountAsync();
+
+
+            var users = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+
+            var model = new PaginatedList<User>()
+            {
+                Items = users,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
             ViewData["SearchString"] = searchString;
-            return View(users);
+            return View(model);
         }
 
-        //[HttpGet("user/get")]
-        //public async Task<IActionResult> GetUser()
-        //{
-        //    var users = await dbContext.users.ToListAsync();
-        //    return View(users);
-        //}
+        [HttpPost("user/allUsers")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var query = dbContext.users.ToList();
+            return Ok(query);
+        }
+        //////////////////////////////////////////////////////////
+        ///
+        [HttpGet("user/get10User")]
+        public async Task<IActionResult> Get10User(string searchString, int pageNumber = 1, int pageSize = 10)
+        {
+
+            const int allRecordsPageSize = int.MaxValue;
+
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var query = dbContext.users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(s => s.FirstName.Contains(searchString) ||
+                                         s.LastName.Contains(searchString) ||
+                                         s.Email.Contains(searchString) ||
+                                         s.Age.Contains(searchString)
+                                         );
+
+            }
+
+            var totalCount = await query.CountAsync();
+            //var users = await query.Take(allRecordsPageSize).ToListAsync();
+            var users = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var model = new PaginatedList<User>()
+            {
+                Items = users,
+                PageNumber = pageNumber,
+                PageSize = allRecordsPageSize,
+                TotalCount = totalCount
+            };
+
+            ViewData["SearchString"] = searchString;
+            // return View(model);
+            return View("GetUser", model);
+
+        }
+
+        //////////////////////////////////////////////////////////////////////////
+        ///
+
+
+        /// <summary>
+        /// //////////////////////////////////////////////////////
+        /// </summary>
+        /// <returns></returns>
+        /// 
+        [HttpGet("user/get15User")]
+        public async Task<IActionResult> Get15User(string searchString, int pageNumber = 1, int pageSize = 15)
+        {
+
+            const int allRecordsPageSize = int.MaxValue;
+
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0 ) pageSize = 15;
+
+            var query = dbContext.users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(s => s.FirstName.Contains(searchString) ||
+                                         s.LastName.Contains(searchString) ||
+                                         s.Email.Contains(searchString) ||
+                                         s.Age.Contains(searchString)
+                                         );
+
+            }
+           
+            var totalCount = await query.CountAsync();
+            var users = await query.Take(allRecordsPageSize).ToListAsync();
+            //var users = await query
+            //    .Skip((pageNumber - 1) * pageSize)
+            //    .Take(pageSize)
+            //    .ToListAsync();
+
+            var model = new PaginatedList<User>()
+            {
+                Items = users,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            ViewData["SearchString"] = searchString;
+           // return View(model);
+            return View("GetUser", model);
+
+        }
+
+
+
+
+
+
+        //////////////////////////////////////////////////////////////////////////
+        ///
+
+     
+        [HttpGet("user/all")]
+        public async Task<IActionResult> AllRecords(string searchString)
+        {
+            const int allRecordsPageSize = int.MaxValue;
+
+            var query = dbContext.users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(s => s.FirstName.Contains(searchString) ||
+                                         s.LastName.Contains(searchString) ||
+                                         s.Email.Contains(searchString) ||
+                                         s.Age.Contains(searchString));
+            }
+
+            var totalCount = await query.CountAsync();
+            var users = await query.Take(allRecordsPageSize).ToListAsync();
+
+            var model = new PaginatedList<User>
+            {
+                Items = users,
+                PageNumber = 1,
+                PageSize = allRecordsPageSize,
+                TotalCount = totalCount
+            };
+
+            ViewData["SearchString"] = searchString;
+            return View("GetUser", model);
+        }
+
 
         [HttpPost("user/addUser")]
         public async Task<IActionResult> Add([FromForm] AddUsers addUsers)
@@ -68,6 +230,10 @@ namespace WebForm.Controllers
             await dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(GetUser));
         }
+
+
+
+
         [HttpGet("user/addUser")]
         public IActionResult Add()
         {
